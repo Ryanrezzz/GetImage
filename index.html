@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Generate Images with Imagen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Orbitron:wght@500;700&family=Roboto+Mono&family=Permanent+Marker&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="index.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://esm.sh/@google/genai@^1.4.0",
+          "react/": "https://aistudiocdn.com/react@^19.1.1/",
+          "react": "https://aistudiocdn.com/react@^19.1.1",
+          "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+          "framer-motion": "https://aistudiocdn.com/framer-motion@^11.3.12"
+        }
+      }
+    </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              display: ['Orbitron', 'sans-serif'],
+              mono: ['Roboto Mono', 'monospace'],
+            },
+            colors: {
+              dark: {
+                900: '#050505',
+                800: '#0a0a0a',
+                card: 'rgba(20, 20, 25, 0.7)',
+              },
+              neon: {
+                blue: '#3b82f6',
+                cyan: '#06b6d4',
+                purple: '#8b5cf6',
+              }
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body class="bg-dark-900 font-sans text-gray-200 antialiased min-h-screen overflow-x-hidden selection:bg-neon-cyan/30 selection:text-neon-cyan">
+    
+    <!-- Ambient Background Effects -->
+    <div class="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+      <div class="absolute top-0 left-1/4 w-96 h-96 bg-neon-purple/20 rounded-full mix-blend-screen filter blur-[100px] opacity-30 animate-blob"></div>
+      <div class="absolute top-1/4 right-1/4 w-96 h-96 bg-neon-cyan/20 rounded-full mix-blend-screen filter blur-[100px] opacity-30 animate-blob animation-delay-2000"></div>
+      <div class="absolute -bottom-8 left-1/3 w-96 h-96 bg-blue-600/20 rounded-full mix-blend-screen filter blur-[100px] opacity-30 animate-blob animation-delay-4000"></div>
+      <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150"></div>
+    </div>
+
+    <div
+      class="relative z-10 min-h-screen flex items-center justify-center p-4 md:p-8"
+      role="main"
+    >
+      <div
+        class="bg-dark-card backdrop-blur-xl border border-white/10 px-8 pt-10 pb-8 rounded-3xl shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] w-full max-w-3xl space-y-8 relative overflow-hidden group"
+      >
+        <!-- Subtle top gradient line -->
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-neon-cyan to-transparent opacity-50"></div>
+
+        <div class="text-center space-y-2">
+          <h1 class="font-display text-4xl md:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-400 drop-shadow-lg">
+            IMAGEN <span class="text-neon-cyan">STUDIO</span>
+          </h1>
+          <p class="text-gray-400 text-sm md:text-base font-light tracking-wide">
+            Visualize your dreams with next-gen AI generation.
+          </p>
+        </div>
+
+        <div class="space-y-6">
+          <div class="relative group/input">
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-neon-cyan to-neon-purple rounded-xl blur opacity-20 group-focus-within/input:opacity-75 transition duration-500"></div>
+            <textarea
+              id="prompt-input"
+              rows="3"
+              class="relative w-full bg-black/60 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 focus:border-transparent transition-all duration-300 resize-none shadow-inner"
+              placeholder="Describe your vision... (e.g., 'Cyberpunk city with neon rain')"
+              aria-label="Image generation prompt"
+            ></textarea>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/5 rounded-xl p-4 border border-white/5">
+            <label for="image-count" class="text-gray-300 text-sm font-mono tracking-wider uppercase">Batch Size</label>
+            
+            <div class="flex items-center space-x-4">
+              <div class="relative flex items-center">
+                <input
+                  type="range"
+                  id="image-range"
+                  min="1"
+                  max="4"
+                  value="1"
+                  class="w-32 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-neon-cyan hover:accent-neon-blue transition-all"
+                />
+              </div>
+              <input
+                type="number"
+                id="image-count"
+                min="1"
+                max="4"
+                value="1"
+                class="bg-black/50 border border-white/20 rounded-lg py-1 px-3 text-white w-16 text-center font-mono focus:ring-1 focus:ring-neon-cyan outline-none transition-colors"
+                readonly
+              />
+            </div>
+          </div>
+        </div>
+
+        <button
+          id="generate-button"
+          class="w-full relative group overflow-hidden rounded-xl p-[1px] focus:outline-none focus:ring-2 focus:ring-neon-cyan focus:ring-offset-2 focus:ring-offset-[#050505]"
+        >
+          <span class="absolute inset-0 bg-gradient-to-r from-neon-cyan via-blue-500 to-neon-purple opacity-70 group-hover:opacity-100 transition-opacity duration-300"></span>
+          <div class="relative bg-black/80 hover:bg-black/60 backdrop-blur-sm rounded-[11px] px-4 py-4 transition-colors duration-300">
+            <span class="font-display font-bold tracking-widest text-white uppercase group-hover:text-neon-cyan transition-colors flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              Initialize Generation
+            </span>
+          </div>
+        </button>
+
+        <div class="w-full min-h-[100px]">
+          <div
+            id="output-grid"
+            class="grid grid-cols-1 sm:grid-cols-2 gap-6 hidden"
+          ></div>
+        </div>
+
+        <div id="status" class="text-center text-sm font-mono min-h-[24px]"></div>
+      </div>
+    </div>
+    <script type="module" src="index.tsx"></script>
+
+    <div id="banner-root"></div>
+    <script type="text/babel" data-type="module">
+      import React, { useState, useEffect } from 'react';
+      import { createRoot } from 'react-dom/client';
+      import { motion, AnimatePresence } from 'framer-motion';
+
+      const REMIX_IDEAS = [
+        "to generate a movie poster.",
+        "to visualize a product placement.",
+        "to reimagine your character designs.",
+        "to create new scenes",
+        "to preview different camera shots.",
+      ];
+
+      const CloseIcon = () => (
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      );
+
+      const Banner = () => {
+          const [isVisible, setIsVisible] = useState(true);
+          const [index, setIndex] = useState(0);
+
+          useEffect(() => {
+              const intervalId = setInterval(() => {
+                  setIndex(prevIndex => (prevIndex + 1) % REMIX_IDEAS.length);
+              }, 3500);
+
+              return () => clearInterval(intervalId);
+          }, []);
+
+          const handleSelectKeyClick = async (e) => {
+            e.preventDefault();
+            if (window.aistudio?.openSelectKey) {
+              await window.aistudio.openSelectKey();
+            } else {
+              console.log('window.aistudio.openSelectKey() not available.');
+              alert('API key selection is not available in this environment.');
+            }
+          };
+          
+          if (!isVisible) {
+            return null;
+          }
+
+          return (
+              <header className="app-banner">
+                  <div className="app-banner-content">
+                      <div className="banner-left">
+                          <p>Powered by the Gemini API</p>
+                      </div>
+                      <div className="remix-ideas">
+                          <span className="remix-prompt">Remix this app...</span>
+                          <div className="remix-text-container">
+                              <AnimatePresence mode="wait">
+                                  <motion.span
+                                      key={index}
+                                      initial={{ opacity: 0, y: 10 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      exit={{ opacity: 0, y: -10 }}
+                                      transition={{ duration: 0.4, ease: "easeInOut" }}
+                                      className="remix-text"
+                                  >
+                                      {REMIX_IDEAS[index]}
+                                  </motion.span>
+                              </AnimatePresence>
+                          </div>
+                      </div>
+                      <div className="banner-right">
+                          <div className="banner-buttons">
+                              <a
+                                  href="https://aistudio.google.com/apps"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="banner-button button-gemini-chat"
+                              >
+                                  Apps on AI Studio
+                              </a>
+                              <a
+                                  href="#"
+                                  onClick={handleSelectKeyClick}
+                                  className="banner-button button-ai-studio"
+                              >
+                                  Add your API Key
+                              </a>
+                          </div>
+                          <button
+                            className="close-button"
+                            onClick={() => setIsVisible(false)}
+                            aria-label="Close notice">
+                            <CloseIcon />
+                          </button>
+                      </div>
+                  </div>
+              </header>
+          );
+      };
+
+      const container = document.getElementById('banner-root');
+      if (container) {
+        const root = createRoot(container);
+        root.render(<React.StrictMode><Banner /></React.StrictMode>);
+      }
+    </script>
+  </body>
+</html>
